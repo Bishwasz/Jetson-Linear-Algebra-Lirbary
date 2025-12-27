@@ -1,0 +1,40 @@
+cmake_minimum_required(VERSION 3.18)
+
+# Project Name and Languages (C++ and CUDA are required)
+project(JetsonLinearAlgebra LANGUAGES CXX CUDA)
+
+# 1. Set Standard C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD 17)
+
+# 2. Include Directories
+# "include" -> Allows #include "jla/jla.h"
+# "src"     -> Allows #include "tensor/tensor_view.hpp"
+include_directories(include src)
+
+# 3. Gather Source Files automatically
+# Glob collects all files in these folders. 
+# Note: Manually listing files is "safer" for big teams, but GLOB is fine for now.
+file(GLOB API_SOURCES "src/api/*.cpp")
+file(GLOB KERNEL_SOURCES "src/kernels/*.cu")
+
+# 4. Create the Shared Library
+# This combines your C++ logic and CUDA kernels into one binary
+add_library(jla SHARED 
+    ${API_SOURCES} 
+    ${KERNEL_SOURCES}
+)
+
+# 5. Compiler & Architecture Flags
+# "native" automatically detects that you are on a Jetson (Orin/Xavier) 
+# and optimizes the code for your specific GPU.
+set_property(TARGET jla PROPERTY CUDA_ARCHITECTURES native)
+
+# Ensure Position Independent Code (PIC) is on for shared libraries
+set_property(TARGET jla PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+# # 6. (Optional) Install Rules
+# # Where to put the lib when you run "make install"
+# install(TARGETS jla DESTINATION lib)
+# install(FILES include/jla/jla.h DESTINATION include/jla)
