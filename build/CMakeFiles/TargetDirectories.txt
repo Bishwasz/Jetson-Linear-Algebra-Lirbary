@@ -1,0 +1,6 @@
+/home/bishwas/Jetson-Linear-Algebra-Lirbary/build/CMakeFiles/jla.dir
+/home/bishwas/Jetson-Linear-Algebra-Lirbary/build/CMakeFiles/test_elementwise.dir
+/home/bishwas/Jetson-Linear-Algebra-Lirbary/build/CMakeFiles/test_gemm.dir
+/home/bishwas/Jetson-Linear-Algebra-Lirbary/build/CMakeFiles/test_tensorcore.dir
+/home/bishwas/Jetson-Linear-Algebra-Lirbary/build/CMakeFiles/edit_cache.dir
+/home/bishwas/Jetson-Linear-Algebra-Lirbary/build/CMakeFiles/rebuild_cache.dir

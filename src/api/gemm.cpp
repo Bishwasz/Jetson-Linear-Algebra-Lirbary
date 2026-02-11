@@ -1,55 +1,72 @@
 #include "jla/jla.h"
-#include "tensor/tensor_view.hpp"
-#include "dispatch/gemm_dispatch.hpp"
+#include "api/internal_common.hpp" // or your manual internal definitions
+#include "tensor/tensor_utils.hpp"
+#include <cuda_runtime.h>
+#include "kernels/gemm_kernels.cuh"
+#include <cuda_fp16.h>
 
-jlaStatus_t jlaGemm(jlaHandle_t h,
-                    jlaOp opA,
-                    jlaOp opB,
-                    float alpha,
-                    jlaTensorView2D A,
-                    jlaTensorView2D B,
-                    float beta,
-                    jlaTensorView2D C,
-                    jlaGemmAlgo algo) {
+
+jlaStatus_t jlaGemm(jlaHandle_t h, 
+                    jlaOp opA, jlaOp opB,
+                    float alpha, 
+                    jlaTensorView2D A, 
+                    jlaTensorView2D B, 
+                    float beta, 
+                    jlaTensorView2D C, 
+                    jlaGemmAlgo algo) 
+{
     if (!h) return JLA_STATUS_INVALID_VALUE;
 
-    if (A.dtype != B.dtype || A.dtype != C.dtype)
-        return JLA_STATUS_INVALID_DTYPE;
-
-    auto a = make_internal_view<float>(A);
-    auto b = make_internal_view<float>(B);
-    auto c = make_internal_view<float>(C);
-
-    if (opA == JLA_OP_T) a = transpose_view(a);
-    if (opB == JLA_OP_T) b = transpose_view(b);
-
-    if (a.cols != b.rows ||
-        c.rows != a.rows ||
-        c.cols != b.cols)
+    // 1. Basic Dimension Checks
+    //    (Assumes opA=N, opB=N for simplicity as per requirements)
+    if (A.cols != B.rows || A.rows != C.rows || B.cols != C.cols) {
         return JLA_STATUS_SHAPE_MISMATCH;
+    }
 
-    GemmParams params {
-        .A = a.data,
-        .B = b.data,
-        .C = c.data,
-        .M = (int)a.rows,
-        .N = (int)b.cols,
-        .K = (int)a.cols,
-        .lda = (int)a.ld,
-        .ldb = (int)b.ld,
-        .ldc = (int)c.ld,
-        .alpha = alpha,
-        .beta  = beta
-    };
+    // 2. Algorithm Resolution (Handle 'AUTO')
+    if (algo == JLA_GEMM_AUTO) {
+        // If inputs are Half, default to TensorCores.
+        if (A.dtype == JLA_F16 && B.dtype == JLA_F16) {
+            algo = JLA_GEMM_TENSORCORE;
+        } else {
+            algo = JLA_GEMM_TILED;
+        }
+    }
 
-    GemmKernel kernel = pick_gemm_kernel(params, algo);
-    if (!kernel)
-        return JLA_STATUS_NOT_SUPPORTED;
+    // 3. Dispatch based on Algorithm
+    switch (algo) {
+        case JLA_GEMM_TENSORCORE: {
+            // Requirement: Inputs must be FP16 (half), Output must be FP32 (float)
+            if (A.dtype != JLA_F16 || B.dtype != JLA_F16 || C.dtype != JLA_F32) {
+                return JLA_STATUS_INVALID_DTYPE; 
+            }
 
-    dim3 block(16, 16);
-    dim3 grid((params.N + 15) / 16,
-              (params.M + 15) / 16);
+            // Create views with specific types <half> for inputs
+            auto a_view = make_internal_view<half>(A);
+            auto b_view = make_internal_view<half>(B);
+            auto c_view = make_internal_view<float>(C);
 
-    kernel<<<grid, block, 0, h->stream>>>(params);
-    return JLA_STATUS_SUCCESS;
+            launch_sgemm_wmma(a_view, b_view, c_view, alpha, beta, h->stream);
+            return JLA_STATUS_SUCCESS;
+        }
+
+        case JLA_GEMM_TILED:
+        case JLA_GEMM_NAIVE: {
+            // Requirement: All FP32
+            if (A.dtype != JLA_F32 || B.dtype != JLA_F32 || C.dtype != JLA_F32) {
+                return JLA_STATUS_INVALID_DTYPE;
+            }
+
+            // Create views with specific types <float> for everything
+            auto a_view = make_internal_view<float>(A);
+            auto b_view = make_internal_view<float>(B);
+            auto c_view = make_internal_view<float>(C);
+
+            launch_gemm(a_view, b_view, c_view, alpha, beta, h->stream);
+            return JLA_STATUS_SUCCESS;
+        }
+
+        default:
+            return JLA_STATUS_NOT_SUPPORTED;
+    }
 }

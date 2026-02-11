@@ -2,20 +2,10 @@
 
 #include <cuda_runtime.h>
 #include <memory>
+#include "internal_common.hpp"
+#include "tensor/tensor_utils.hpp"
 
-/* =========================================================
-   Internal Handle Definition
-   ========================================================= */
 
-/*
- * This struct is COMPLETELY hidden from users.
- * Users only ever see jlaHandle_t (opaque pointer).
- */
-struct jlaHandle_ {
-    cudaStream_t stream;
-
-    jlaHandle_() : stream(nullptr) {}
-};
 
 /* =========================================================
    Public API: Handle Lifecycle

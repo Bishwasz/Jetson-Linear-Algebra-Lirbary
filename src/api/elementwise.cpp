@@ -1,6 +1,8 @@
 #include "jla/jla.h"
 #include "kernels/elementwise.h" // Include the bridge header
 #include "utils/checks.hpp"
+#include "internal_common.hpp"
+#include "tensor/tensor_utils.hpp"
 
 // --- Public API Implementation ---
 

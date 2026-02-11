@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/test_jla.dir/tests/test_elementwise.cpp.o -o test_jla  -Wl,-rpath,/home/bishwas/Jetson-Linear-Algebra-Lirbary/build:/usr/local/cuda/lib64 libjla.so /usr/local/cuda/lib64/libcudart.so 

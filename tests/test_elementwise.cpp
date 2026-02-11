@@ -4,22 +4,6 @@
 #include <cuda_runtime.h>
 #include "jla/jla.h"
 
-// --- Error Checking Helpers ---
-#define CHECK_CUDA(call) { \
-    cudaError_t err = call; \
-    if (err != cudaSuccess) { \
-        std::cerr << "CUDA Error: " << cudaGetErrorString(err) << " at line " << __LINE__ << std::endl; \
-        exit(1); \
-    } \
-}
-
-#define CHECK_JLA(call) { \
-    jlaStatus_t err = call; \
-    if (err != JLA_STATUS_SUCCESS) { \
-        std::cerr << "JLA Error code: " << err << " at line " << __LINE__ << std::endl; \
-        exit(1); \
-    } \
-}
 
 int main() {
     std::cout << "--- Starting JLA Element-wise Test ---" << std::endl;
@@ -57,9 +41,9 @@ int main() {
 
     // 6. Define Tensor Views (Simple Contiguous)
     // ld (stride) is equal to cols because it's packed
-    jlaTensorView2D viewA = {d_A, rows, cols, cols, JLA_FLOAT32};
-    jlaTensorView2D viewB = {d_B, rows, cols, cols, JLA_FLOAT32};
-    jlaTensorView2D viewC = {d_C, rows, cols, cols, JLA_FLOAT32};
+    jlaTensorView2D viewA = {d_A, rows, cols, cols, JLA_F32};
+    jlaTensorView2D viewB = {d_B, rows, cols, cols, JLA_F32};
+    jlaTensorView2D viewC = {d_C, rows, cols, cols, JLA_F32};
 
     // ==========================================
     // TEST 1: ADDITION (1.0 + 2.0 = 3.0)
