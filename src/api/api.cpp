@@ -5,17 +5,12 @@
 #include "internal_common.hpp"
 #include "tensor/tensor_utils.hpp"
 
-
-
-/* =========================================================
-   Public API: Handle Lifecycle
-   ========================================================= */
+// 
 
 jlaStatus_t jlaCreate(jlaHandle_t* out_handle) {
     if (!out_handle)
         return JLA_STATUS_INVALID_VALUE;
 
-    // RAII allocation
     auto handle = std::make_unique<jlaHandle_>();
 
     // Default: CUDA default stream (nullptr)
@@ -35,9 +30,7 @@ jlaStatus_t jlaDestroy(jlaHandle_t handle) {
     return JLA_STATUS_SUCCESS;
 }
 
-/* =========================================================
-   Stream Management
-   ========================================================= */
+   //Stream Management
 
 jlaStatus_t jlaSetStream(jlaHandle_t handle, void* cuda_stream) {
     if (!handle)

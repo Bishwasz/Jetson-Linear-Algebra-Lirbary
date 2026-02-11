@@ -4,9 +4,7 @@
 
 using namespace nvcuda;
 
-// ==========================================
 // CONFIGURATION
-// ==========================================
 const int BLOCKSIZE = 128;
 // Tile Dimensions
 const int BM = 64; // Block M
@@ -17,15 +15,9 @@ const int BK = 16; // Block K
 const int WM = 32;
 const int WN = 32;
 
-// PADDING TO REDUCE BANK CONFLICTS
-// We pad the leading dimension of shared memory buffers.
-// 8 elements * sizeof(half) = 16 bytes.
-// This ensures that column 0 of row 0 and column 0 of row 1 fall into different banks.
 const int PAD = 8; 
 
-// ==========================================
 // 1. OPTIMIZED TENSOR CORE KERNEL (TILED)
-// ==========================================
 __global__ void sgemm_wmma_tiled_kernel(
     TensorView2D<half>  A,
     TensorView2D<half>  B,
@@ -105,19 +97,15 @@ __global__ void sgemm_wmma_tiled_kernel(
     
     __syncthreads();
 
-    // ============================================
     // MAIN LOOP - Start from k=BK (second tile)
-    // ============================================
     for (int k = BK; k <= K; k += BK) {
         
         read_idx = write_idx;
         write_idx = 1 - write_idx;
         
-        // --- LOAD NEXT TILE (if not past end) ---
         if (k < K) {
             int t_idx = tid;
             
-            // Load A tile
             while (t_idx < BM * BK) {
                 int row = t_idx / BK;
                 int col = t_idx % BK;
@@ -151,7 +139,6 @@ __global__ void sgemm_wmma_tiled_kernel(
             }
         }
 
-        // --- COMPUTE WITH CURRENT TILE (read_idx) ---
         int warpId = tid / 32;
         int warpRow = warpId / 2; 
         int warpCol = warpId % 2; 
@@ -177,7 +164,6 @@ __global__ void sgemm_wmma_tiled_kernel(
         __syncthreads();
     }
 
-    // Store results (same as before)
     int warpId = tid / 32;
     int warpRow = warpId / 2;
     int warpCol = warpId % 2;
@@ -234,11 +220,7 @@ void launch_sgemm_wmma(
     sgemm_wmma_tiled_kernel<<<grid, block, 0, stream>>>(A, B, C, alpha, beta);
 }
 
-// ==========================================
 // 2. STANDARD SHARED MEMORY KERNEL
-// ==========================================
-// (Kept exactly as it was)
-
 __global__ void sgemm_shared_mem_kernel(
     TensorView2D<float> A,
     TensorView2D<float> B,

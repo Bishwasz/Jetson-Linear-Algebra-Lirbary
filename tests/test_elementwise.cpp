@@ -8,7 +8,6 @@
 int main() {
     std::cout << "--- Starting JLA Element-wise Test ---" << std::endl;
 
-    // 1. Setup Dimensions (1024x1024 matrix)
     int rows = 1024;
     int cols = 1024;
     int n = rows * cols;
@@ -39,15 +38,12 @@ int main() {
     jlaHandle_t handle;
     CHECK_JLA(jlaCreate(&handle));
 
-    // 6. Define Tensor Views (Simple Contiguous)
-    // ld (stride) is equal to cols because it's packed
+
     jlaTensorView2D viewA = {d_A, rows, cols, cols, JLA_F32};
     jlaTensorView2D viewB = {d_B, rows, cols, cols, JLA_F32};
     jlaTensorView2D viewC = {d_C, rows, cols, cols, JLA_F32};
 
-    // ==========================================
-    // TEST 1: ADDITION (1.0 + 2.0 = 3.0)
-    // ==========================================
+
     std::cout << "Running jlaAdd..." << std::endl;
     CHECK_JLA(jlaAdd(handle, viewA, viewB, viewC));
 
@@ -59,13 +55,9 @@ int main() {
     for (int i = 0; i < n; i++) {
         error += std::abs(h_C[i] - 3.0f);
     }
-    if (error < 0.01f) std::cout << "✅ jlaAdd Passed!" << std::endl;
-    else std::cout << "❌ jlaAdd Failed! Error sum: " << error << std::endl;
+    if (error < 0.01f) std::cout << "jlaAdd Passed!" << std::endl;
+    else std::cout << " jlaAdd Failed! Error sum: " << error << std::endl;
 
-
-    // ==========================================
-    // TEST 2: MULTIPLICATION (1.0 * 2.0 = 2.0)
-    // ==========================================
     std::cout << "Running jlaElemMul..." << std::endl;
     CHECK_JLA(jlaElemMul(handle, viewA, viewB, viewC));
 
@@ -75,8 +67,8 @@ int main() {
     for (int i = 0; i < n; i++) {
         error += std::abs(h_C[i] - 2.0f);
     }
-    if (error < 0.01f) std::cout << "✅ jlaElemMul Passed!" << std::endl;
-    else std::cout << "❌ jlaElemMul Failed! Error sum: " << error << std::endl;
+    if (error < 0.01f) std::cout << "jlaElemMul Passed!" << std::endl;
+    else std::cout << "jlaElemMul Failed! Error sum: " << error << std::endl;
 
     // 7. Cleanup
     CHECK_JLA(jlaDestroy(handle));
